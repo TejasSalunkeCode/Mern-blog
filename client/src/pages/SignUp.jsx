@@ -1,26 +1,81 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaPenNib, FaGoogle, FaGithub } from 'react-icons/fa';
-import { useState } from 'react';
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.id]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle signup logic here
-    console.log(formData);
+    console.log('Form submitted:', formData);
+    
+    if (!formData.username || !formData.email || !formData.password) {
+      const error = 'Please fill out all fields.';
+      console.error('Validation error:', error);
+      return setErrorMessage(error);
+    }
+    
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      
+      console.log('Sending request to server...');
+      // First test basic connectivity
+      try {
+        const testResponse = await fetch('http://localhost:3000');
+        console.log('Test connection status:', testResponse.status);
+      } catch (testError) {
+        console.error('Test connection failed:', testError);
+        throw new Error('Cannot connect to the server. Please make sure the backend is running on port 3000.');
+      }
+      
+      // Now try the actual signup
+      const response = await fetch('http://localhost:3000/api/auth/signup', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData),
+      });
+      
+      console.log('Response status:', response.status);
+      
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('Response data:', data);
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned non-JSON response');
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to sign up');
+      }
+      
+      // If we get here, signup was successful
+      console.log('Signup successful, redirecting to sign-in...');
+      navigate('/sign-in');
+      
+    } catch (error) {
+      console.error('Signup error:', error);
+      setErrorMessage(error.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,6 +93,11 @@ export default function SignUp() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {errorMessage}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-1">
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -47,11 +107,9 @@ export default function SignUp() {
                 <input
                   id="username"
                   type="text"
-                  value={formData.username}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                  placeholder="Choose a username"
-                  required
+                  placeholder="Enter your username"
                 />
               </div>
             </div>
@@ -64,11 +122,9 @@ export default function SignUp() {
                 <input
                   id="email"
                   type="email"
-                  value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                  placeholder="your@email.com"
-                  required
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -86,20 +142,29 @@ export default function SignUp() {
                 <input
                   id="password"
                   type="password"
-                  value={formData.password}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                   placeholder="••••••••"
-                  required
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              Create account
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Create account'
+              )}
             </button>
           </form>
 
@@ -129,6 +194,13 @@ export default function SignUp() {
                 <span className="ml-2">GitHub</span>
               </button>
             </div>
+            
+            <p className="mt-6 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/sign-in" className="font-medium text-indigo-600 hover:text-indigo-500">
+                Sign in
+              </Link>
+            </p>
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-600">
