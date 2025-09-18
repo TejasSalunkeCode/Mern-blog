@@ -202,13 +202,6 @@ export default function SignUp() {
               </Link>
             </p>
           </div>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/sign-in" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign in
-            </Link>
-          </p>
         </div>
 {/* 
         <p className="mt-8 text-center text-xs text-gray-500">
