@@ -3,12 +3,19 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "node_modules/flowbite-react/lib/esm/**/*.js", // Add this line
+    "node_modules/flowbite-react/lib/esm/**/*.js",
   ],
+  darkMode: 'class', // Enable class-based dark mode
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        dark: {
+          DEFAULT: 'rgb(16, 23, 42)', // Match your dark theme color
+        },
+      },
+    },
   },
   plugins: [
-    import("flowbite/plugin"),
+    import('flowbite/plugin'),
   ],
 };

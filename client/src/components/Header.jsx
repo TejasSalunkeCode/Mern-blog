@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Button, Navbar, TextInput, Avatar,Dropdown,DropdownHeader, DropdownItem, DropdownDivider } from 'flowbite-react';
+import { Button, Navbar, TextInput, Avatar,Dropdown,DropdownHeader, DropdownItem, DropdownDivider, theme } from 'flowbite-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AiOutlineSearch } from 'react-icons/ai';
-import { FaMoon, FaBars, FaTimes } from 'react-icons/fa';
+import { FaMoon, FaBars, FaTimes,FaSun } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { signOutStart, signOutSuccess, signOutFailure } from '../redux/user/userSlice';
+import { toggleTheme } from '../redux/theme/themeSlice';
 
 export default function Header() {
   const path = useLocation().pathname;
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector(state => state.user);
+  const { theme } = useSelector((state) => state.theme);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleSignOut = async () => {
@@ -99,8 +101,8 @@ export default function Header() {
       </div>
 
       <div className="hidden md:flex items-center gap-2">
-        <Button color="gray" pill className="w-12 h-10">
-          <FaMoon />
+        <Button color="gray" pill className="w-12 h-10" onClick={()=>dispatch(toggleTheme())}>
+        {theme==='light' ? <FaSun/> : <FaMoon/>}
         </Button>
         
         {currentUser ? (
