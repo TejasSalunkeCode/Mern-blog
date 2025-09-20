@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPenNib, FaGoogle, FaGithub } from 'react-icons/fa';
-import { useDispatch, useSelector } from 'react-redux';
-import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
+import { useDispatch } from 'react-redux';
+import { signInStart } from '../redux/user/userSlice';
+import OAuth from '../components/OAuth';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { loading, error: errorMessage } = useSelector((state) => state.user);
+  const dispatch=useDispatch();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
@@ -16,14 +19,30 @@ export default function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted:', formData);
     
     if (!formData.email || !formData.password) {
-      return dispatch(signInFailure('Please fill out all fields.'));
+      const error = 'Please fill out all fields.';
+      console.error('Validation error:', error);
+      return setErrorMessage(error);
     }
     
     try {
-      dispatch(signInStart());
+      setLoading(true);
+      setErrorMessage(null);
       
+      console.log('Sending request to server...');
+      // First test basic connectivity
+      try {
+        const testResponse = await fetch('http://localhost:3000');
+        console.log('Test connection status:', testResponse.status);
+      } catch (testError) {
+        console.error('Test connection failed:', testError);
+        throw new Error('Cannot connect to the server. Please make sure the backend is running on port 3000.');
+      }
+      
+      // Now try the actual signin
+      dispatch(signInStart());
       const response = await fetch('http://localhost:3000/api/auth/signin', {
         method: 'POST',
         headers: { 
@@ -34,17 +53,35 @@ export default function SignIn() {
         body: JSON.stringify(formData),
       });
       
-      const data = await response.json();
+      console.log('Response status:', response.status);
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Sign in failed');
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('Response data:', data);
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned non-JSON response');
       }
       
-      dispatch(signInSuccess(data));
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to sign in');
+      }
+      
+      // If we get here, signin was successful
+      console.log('Sign in successful, redirecting to home...');
       navigate('/');
+      
     } catch (error) {
-      console.error('Error during sign in:', error);
-      dispatch(signInFailure(error.message || 'Something went wrong. Please try again.'));
+      console.error('Signup error:', error);
+      setErrorMessage(error.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,12 +152,23 @@ export default function SignIn() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Signing in...
+                  Creating...
                 </>
               ) : (
-                'Sign in'
+                'Sign In'
               )}
             </button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <OAuth />
           </form>
 
           <div className="mt-6">

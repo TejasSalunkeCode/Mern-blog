@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPenNib, FaGoogle, FaGithub } from 'react-icons/fa';
+import OAuth from '../components/OAuth';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
@@ -177,6 +178,7 @@ export default function SignUp() {
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
+              {/* <OAuth/> */}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
